@@ -1,87 +1,56 @@
 from turtle import color
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pl
+from scipy.stats import gmean
+import statistics
+import sys
 import os
 
-fig, ax = plt.subplots(1, figsize=(12, 10))
-alias = 'tc'
-colors = ['#FFC0CB', '#008000', '#0000FF', '#808080', '#FF00FF']#pink,green,blue,gray,magneta(purple shade)
-fileName=['customLog_9.log']
 
-def process(ind,file):
-    df = pd.read_csv('' + file)
-    df.head()
+files=['customLog_12']
+filePath=None
+filLoc=None
+if filePath == None:
+    filePath = sys.argv[1]
+    for file in files:
+        fp=os.path.join(filePath, file + ".log")
+        fileLoc=fp
+        print(fp)
+    filePath=filePath+'/'
 
-    fields = []
-    labels = []
+df = pd.read_csv(fileLoc)
+df.head()
 
-    for col in df:
-        if col=='epoc':
-            continue
-        fields.append(col)   
+columns=['fs','ts','fns','tns']
+levels=['1','2','3']
 
-        if col == 'np':
-            labels.append("no-prediction")
-            print(col, "no-prediction")
-            continue
+tmp={'epoc':df['epoc'], 'lp':df['lp']}
+newCol = []
+for col in columns:
+    colN=col+str(levels[0])
+    tmp[colN]=df[colN]
+    newCol.append(colN)
+tmpf = pd.DataFrame(data=tmp)
+print(tmpf)
+tnum = tmpf.to_numpy()
+x = tnum[:,1]
+y = tnum[:,0]
+print(x,y)
 
-        if col == 'tsl':
-            labels.append("true skip loss")
-            print(col, "true skip loss")
-            continue
+dx=x[1:]-x[:-1]
 
-        if col == 'tso':
-            labels.append("true skip opportunity")
-            print(col, "true skip opportunity")
-            continue
+x2 = np.insert(x, np.where(dx>1)[0]+1, -1)
+y2 = np.insert(y, np.where(dx>1)[0]+1, -1)
 
-        if col == 'fs':
-            labels.append("false skip")
-            print(col, "false skip")
-            continue
+x2 = np.ma.masked_where(x2 == -1, x2)
+y2 = np.ma.masked_where(y2 == -1, y2)
 
-        if col == 'h':
-            labels.append("hit")
-            print(col, "hit")
-            continue
-
-        if col == 'm':
-            labels.append("miss")
-            print(col, "miss")
-            continue
-
-        else:
-            labels.append(col)
-            print(col, col)
-
-    
-
-    left=len(df) * [0]
-
-    for idx, name in enumerate(fields):
-        plt.barh(df.index, df[name], left=left, color=colors[idx])
-        left=left+df[name]
-
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-
-    # adjust limits and draw grid lines
-    # plt.ylim(-0.5, ax.get_yticks()[-1] + 0.5)
-    ax.set_axisbelow(True)
-    ax.xaxis.grid(color='gray', linestyle='dashed')
-
-    # title, legend, labels
-    plt.legend(labels, bbox_to_anchor=([0.55, 1, 0, 0]), ncol=4, frameon=False)
-    plt.xlabel('metric/total')
-
-    plt.savefig(file+'-'+ alias +'.png')
-
-
-threads=[]
-for ind,file in enumerate(fileName):
-    process(ind,file)
-
-
+df=pd.DataFrame({'x':x2,'y':y2})
+df.to_csv(filePath+'lp.csv')
+pl.figure()
+pl.subplot(121)
+pl.plot(y,x,'k.')
+pl.subplot(122)
+pl.plot(y2,x2, 'k.')
+pl.savefig('fig1.png')
