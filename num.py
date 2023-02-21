@@ -18,23 +18,6 @@ ax.fmt_ydata = 1.0
 
 allMsg=[]
 
-
-class Cache:
-	def __init__(self, cacheName):
-		self.cacheName=cacheName
-		self.coverage=0
-		self.accuracy=0
-		self.fs=self.fns=self.ts=self.tns=0
-		self.cm=self.ch=0
-		self.am=self.ah=0
-
-class Core:
-	def __init__(self, coreId, cacheName):
-		self.coreId=coreId
-		self.cache=Cache(cacheName)
-	def allValues(self):
-		return "{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}\n".format(self.coreId,self.cache.cacheName,self.cache.coverage,self.cache.accuracy,self.cache.ch,self.cache.cm, self.cache.ah, self.cache.am, self.cache.fs, self.cache.ts, self.cache.fns, self.cache.tns)
-
 def printFunc(msg,val):
 	msg=msg+str(val)+'\n'
 	allMsg.append(msg)
@@ -63,7 +46,7 @@ def coverageAndAccuracy(path, name, df, coreFolder):
 
 	fig.tight_layout()
 	plt.xticks(rotation=90)
-	plt.gca().yaxis.set_major_locator(plt.MultipleLocator(5))
+	# plt.gca().yaxis.set_major_locator(plt.MultipleLocator(5))
 	plt.grid(True, which='major', axis='y')
 	plt.xlabel('epoc')
 	plt.ylabel('coverage % = (LPT hit/Total Access), accuracy % = (matching prediction & actual/ LPT hit)')
@@ -92,7 +75,7 @@ def LtypeofAccess(path,name,df,coreFolder):
 	df.plot(x="epoc", y=['fsp','tsp','fnsp','tnsp'], kind="bar",figsize=(30,15))
 
 	plt.xticks(rotation=90)
-	plt.gca().yaxis.set_major_locator(plt.MultipleLocator())
+	# plt.gca().yaxis.set_major_locator(plt.MultipleLocator())
 	plt.grid(True, which='major', axis='y')
 
 	plt.xlabel('epoc')
@@ -102,13 +85,18 @@ def LtypeofAccess(path,name,df,coreFolder):
 	plt.clf()
 	
 
+'''
+generate graph of covergae hit-miss percentage
+'''
+def Lcoverage_hitmiss(path,name,df,coreFolder):
+	
+	cols=['cmrp', 'chrp','cmpp','chpp']
 
-def Lcoverage_hitmiss_helper(cols, path,name,df,coreFolder):
 	df.plot(x="epoc", y=cols, kind="bar",figsize=(30,15))
 
 	fig.tight_layout()
 	plt.xticks(rotation=90)
-	plt.gca().yaxis.set_major_locator(plt.MultipleLocator())
+	# plt.gca().yaxis.set_major_locator(plt.MultipleLocator())
 	plt.grid(True, which='major', axis='y')
 
 	plt.xlabel('epoc')
@@ -117,16 +105,6 @@ def Lcoverage_hitmiss_helper(cols, path,name,df,coreFolder):
 
 	plt.savefig(coreFolder +'/CHM-'+str(name)+'.png')
 	plt.clf()
-
-'''
-generate graph of covergae hit-miss percentage
-'''
-def Lcoverage_hitmiss(path,name,df,coreFolder):
-	
-	cols1=['cmrp', 'cmpp']
-	Lcoverage_hitmiss_helper(cols1, path,str(name)+'_miss',df,coreFolder)
-	cols2=['chrp', 'chpp']
-	Lcoverage_hitmiss_helper(cols2, path,str(name)+'_hit',df,coreFolder)
 
 
 '''
@@ -149,7 +127,7 @@ def Laccess_hitmiss(path,name,df,coreFolder):
 
 	fig.tight_layout()
 	plt.xticks(rotation=90)
-	plt.gca().yaxis.set_major_locator(plt.MultipleLocator())
+	# plt.gca().yaxis.set_major_locator(plt.MultipleLocator())
 	plt.grid(True, which='major', axis='y')
 
 	dst=os.path.join(coreFolder,'CA-'+str(name)+'.png')
@@ -186,8 +164,8 @@ stacked
 generate graph of covergae hit-miss percentage
 '''
 def coverage_hitmiss(path,name,df,coreFolder):
-	df['cmp']=(df['cm']/df['coverage'])*percent
-	df['chp']=(df['ch']/df['coverage'])*percent
+	df['cmp']=df['cm']#/df['coverage'])*percent
+	df['chp']=df['ch']#/df['coverage'])*percent
 	df=df.sample(n=len(df)//4,replace=True,random_state=1)
 	cols=['cmp','chp']
 	off = len(df) * [0]
@@ -206,8 +184,8 @@ stacked
 generate graph of access hit-miss percentage
 '''
 def access_hitmiss(path,name,df,coreFolder):
-	df['amp']=(df['tm']/df['totalaccess'])*percent
-	df['ahp']=(df['th']/df['totalaccess'])*percent
+	df['amp']=df['tm']#/df['totalaccess'])*percent
+	df['ahp']=df['th']#/df['totalaccess'])*percent
 	df=df.sample(n=len(df)//4,replace=True,random_state=1)
 	cols=['amp','ahp']
 	off = len(df) * [0]
@@ -224,9 +202,6 @@ def access_hitmiss(path,name,df,coreFolder):
 
 ####################################################################
 
-
-allResults = []
-
 def getResults(rootFolder, coreFolder, coreName, tddf):
 
 	leveldf=tddf.groupby("cache")
@@ -235,45 +210,29 @@ def getResults(rootFolder, coreFolder, coreName, tddf):
 		if name == 'l1i':
 			continue
 
-		coreobj = Core(coreName, name)
-
-		print("*** thie is {}".format(coreobj.cache.cacheName))
-
-		df=df.sample(n=100,replace=False,random_state=1)
+		df=df.sample(n=50,replace=True,random_state=1)
 		df=df.sort_values('epoc')
 
-		df['fsp']=(df['fs']/df['coverage'])*percent
-		df['tsp']=(df['ts']/df['coverage'])*percent
-		df['fnsp']=(df['fns']/df['coverage'])*percent
-		df['tnsp']=(df['tns']/df['coverage'])*percent
+		df['fsp']=df['fs']#/df['coverage'])*percent
+		df['tsp']=df['ts']#/df['coverage'])*percent
+		df['fnsp']=df['fns']#/df['coverage'])*percent
+		df['tnsp']=df['tns']#/df['coverage'])*percent
 
-		df['amp']=(df['tm']/df['totalaccess'])*percent
-		df['ahp']=(df['th']/df['totalaccess'])*percent
+		df['amp']=df['tm']#/df['totalaccess'])*percent
+		df['ahp']=df['th']#/df['totalaccess'])*percent
 
-		df['cmrp']=(df['cmr']/df['coverage'])*percent
-		df['chrp']=(df['chr']/df['coverage'])*percent
-		df['cmpp']=(df['cmp']/df['coverage'])*percent
-		df['chpp']=(df['chp']/df['coverage'])*percent
+		df['cmrp']=df['cmr']#/df['coverage'])*percent
+		df['chrp']=df['chr']#/df['coverage'])*percent
+		df['cmpp']=df['cmp']#/df['coverage'])*percent
+		df['chpp']=df['chp']#/df['coverage'])*percent
 
-		df['A']=(df['coverage']/df['totalaccess'])*percent
-		df['B']=(df['accuracy']/df['coverage'])*percent
+		df['A']=df['coverage']#/df['totalaccess'])*percent
+		df['B']=df['accuracy']#/df['coverage'])*percent
 
 		group=df
 		
 
 		printFunc('***** {} *****'.format(str(name)), "")
-
-		group['total_access'] = group['totalaccess'].sum()
-		group['thits'] = group['th'].sum()
-		group['tmiss'] = group['tm'].sum()
-
-		group['total_coverage'] = group['coverage'].sum()
-
-		group['chits'] = group['chr'].sum()
-		group['cmiss'] = group['cmr'].sum()
-
-		group['phits'] = group['chp'].sum()
-		group['pmiss'] = group['cmp'].sum()
 
 		#save cache level data by core
 		levelPath=os.path.join(coreFolder, str(coreName)+"_"+name+".log")
@@ -284,57 +243,39 @@ def getResults(rootFolder, coreFolder, coreName, tddf):
 		print("LP coverage and accuracy at: {} ...ok".format(name))
 		gm=mean(df.loc[:,'A'])
 		printFunc('coverage %:', gm)
-		coreobj.cache.coverage=gm
 		gm=mean(df.loc[:,'B'])
 		printFunc('accuracy %:', gm)
-		coreobj.cache.accuracy=gm
 		
 		#type of access
 		LtypeofAccess(rootFolder, "core"+str(coreName)+"_"+name, group, coreFolder)
 		print("Type of access: {} ...ok".format(name))
 		cols=['fs','ts','fns','tns']
 		for col in cols:
-			tmp=col+'p'
-			gm=mean(df.loc[:,tmp])
-			printFunc(tmp+" %:", gm)
-			if col=='fs':
-				coreobj.cache.fs=gm
-			if col=='fns':
-				coreobj.cache.fns=gm
-			if col=='ts':
-				coreobj.cache.ts=gm
-			if col=='tns':
-				coreobj.cache.tns=gm
+			col=col+'p'
+			gm=mean(df.loc[:,col])
+			printFunc(col+" %:", gm)
 
 		#hit miss 
 		Lcoverage_hitmiss(rootFolder, "core"+str(coreName)+"_"+name, group, coreFolder)
 		print("HitMiss count: {} ...ok".format(name))
-		cols = ['cm','ch']
+		cols = ['cmp','chp']
 		for col in cols:
-			tmp=col+'pp'
-			gm=mean(df.loc[:,tmp])
-			if tmp =='cmpp':
+			gm=mean(df.loc[:,col])
+			if col =='cmp':
 				printFunc('coverage miss %: ', gm)
-				coreobj.cache.cm=gm
 			else:
 				printFunc('coverage hit %: ', gm)
-				coreobj.cache.ch=gm
 
 		#hit miss 
 		Laccess_hitmiss(rootFolder, "core"+str(coreName)+"_"+name, group, coreFolder)
 		print("Access hit-miss count: {} ...ok".format(name))
-		cols = ['am','ah']
+		cols = ['amp','ahp']
 		for col in cols:
-			tmp=col+'p'
-			gm=mean(df.loc[:,tmp])
-			if tmp =='amp':
+			gm=mean(df.loc[:,col])
+			if col =='amp':
 				printFunc('access miss %: ', gm)
-				coreobj.cache.am=gm
 			else:
 				printFunc('access hit %: ', gm)
-				coreobj.cache.ah=gm
-
-		allResults.append(coreobj)
 		
 
 '''
@@ -361,18 +302,8 @@ def separate(filePath, fileName, folderPath):
 		f = open(summaryFile, "w")
 		for msg in allMsg:
 			f.write(msg)
-		f.close()
 
-	summaryFile = os.path.join(coreFolder, "summary-excel"+str(name)+".txt")
-	f = open(summaryFile, "w")
-	f.write("core,cache, coverage, accuracy, coverage hit, coverage miss, access hit, access miss, fs, ts, fns, tns\n");
-
-	for obj in allResults:
-		msg = obj.allValues()
-		f.write(msg)
-
-
-percent=100
+percent=1
 folderPath = None
 if folderPath == None:
 	folderPath = sys.argv[1]
